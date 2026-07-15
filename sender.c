@@ -1,26 +1,15 @@
 /*
- * SENDER — Dual-layer FEC reliable real-time media transport.
+ * SENDER — Dual-layer FEC for reliable real-time media transport.
  *
- * Strategy:
- *   Layer 1 (K=2): XOR parity over every pair of consecutive frames.
- *                  Fast recovery — FEC arrives 20ms after first frame.
- *   Layer 2 (K=4): XOR parity over every quad of consecutive frames.
- *                  Backup — catches cases where Layer 1 FEC is lost.
+ * Sends each frame as a DATA packet, then emits XOR parity:
+ *   - K=2 pair FEC after every 2 frames  (fast recovery)
+ *   - K=4 quad FEC after every 4 frames  (backup if K=2 FEC is dropped)
  *
- * Overhead budget (no feedback):
- *   Data:    1500 × 165 = 247,500 B
- *   K2 FEC:  750 × 166  = 124,500 B
- *   K4 FEC:  375 × 166  =  62,250 B
- *   Total:  434,250 / 240,000 = 1.81× (cap 2.0×)  ✓
- *
- * Wire format (sender -> relay -> receiver):
+ * Wire format:
  *   DATA:  [0x01][4B BE seq][160B payload]                   = 165 bytes
  *   FEC:   [0x02][4B BE base_seq][1B count][160B XOR parity] = 166 bytes
- *          count=2 → K=2 pair FEC;  count=4 → K=4 quad FEC
  *
- * Ports (all 127.0.0.1):
- *   bind 47010  <- harness source delivers frame i at t0 + i*20ms
- *   send 47001  -> relay uplink (media + FEC)
+ * Ports: bind 47010 (harness in), send 47001 (relay out)
  */
 
 #include <arpa/inet.h>

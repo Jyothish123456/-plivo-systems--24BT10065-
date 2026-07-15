@@ -1,20 +1,14 @@
 /*
  * RECEIVER — Dual-layer FEC recovery + immediate forwarding.
  *
- * Recovery layers:
- *   1. Direct: forward every DATA packet to player immediately on receipt.
- *   2. K=2 pair FEC: if 1 frame missing in pair and FEC present → XOR recover.
- *   3. K=4 quad FEC: if 1 frame missing in quad and FEC present → XOR recover.
- *      Catches cases where the K=2 FEC packet was itself dropped by the relay.
+ * On DATA packet: forward to player immediately, store for FEC.
+ * On FEC packet (K=2 or K=4): try to recover missing frame via XOR.
  *
- * Wire format (relay -> receiver):
+ * Wire format:
  *   DATA:  [0x01][4B BE seq][160B payload]                   = 165 bytes
  *   FEC:   [0x02][4B BE base_seq][1B count][160B XOR parity] = 166 bytes
- *          count=2 → K=2 pair FEC;  count=4 → K=4 quad FEC
  *
- * Ports (all 127.0.0.1):
- *   bind 47002  <- media from sender via relay
- *   send 47020  -> harness player (4B BE seq + 160B payload)
+ * Ports: bind 47002 (relay in), send 47020 (player out)
  */
 
 #include <arpa/inet.h>
